@@ -2,8 +2,10 @@ import argparse
 import requests
 import configparser
 import time
+import json
 
 parser = argparse.ArgumentParser()
+parser.add_argument("-j", help="Return only raw JSON", action="store_true")
 parser.add_argument("-l", help="Lock your vehicle", action="store_true")
 parser.add_argument("-u", help="Unlock your vehicle", action="store_true")
 parser.add_argument("-s", help="Start your vehicle", action="store_true")
@@ -79,67 +81,115 @@ header = {
 }
 
 def getStatus():
-    return requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()
+    return json.dumps(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json())
 
 def lockVehicle():
     vehicleStatus = requests.put(f"https://usapi.cv.ford.com/api/vehicles/v2/{config['config']['vin']}/doors/lock", headers = header).json()
     time.sleep(int(config["config"]["timer"]))
     if vehicleStatus["status"] == 200 and getStatus()["vehiclestatus"]["lockStatus"]["value"] == "LOCKED":
-        return "Vehicle Locked"
+        if args.j:
+            return getStatus()["vehiclestatus"]["lockStatus"]
+        elif not args.j:
+            return "Vehicle Locked"
     else:
-        return f"Vehicle Lock Command Failed:\n{vehicleStatus}\n" + str(getStatus()["vehiclestatus"]["lockStatus"])
+        if args.j:
+            return getStatus()["vehiclestatus"]["lockStatus"]
+        elif not args.j:
+            return f"Vehicle Lock Command Failed:\n{vehicleStatus}\n" + str(getStatus()["vehiclestatus"]["lockStatus"])
 
 def unlockVehicle():
     vehicleStatus = requests.delete(f"https://usapi.cv.ford.com/api/vehicles/v2/{config['config']['vin']}/doors/lock", headers = header).json()
     time.sleep(int(config["config"]["timer"]))
     if vehicleStatus["status"] == 200 and getStatus()["vehiclestatus"]["lockStatus"]["value"] == "UNLOCKED":
-        return "Vehicle Unlocked"
+        if args.j:
+            return getStatus()["vehiclestatus"]["lockStatus"]
+        elif not args.j:
+            return "Vehicle Unlocked"
     else:
-        return f"Vehicle Unlock Command Failed:\n{vehicleStatus}" + str(getStatus()["vehiclestatus"]["lockStatus"])
+        if args.j:
+            return getStatus()["vehiclestatus"]["lockStatus"]
+        elif not args.j:
+            return f"Vehicle Unlock Command Failed:\n{vehicleStatus}" + str(getStatus()["vehiclestatus"]["lockStatus"])
 
 def startVehicle():
     vehicleStatus = requests.put(f"https://usapi.cv.ford.com/api/vehicles/v2/{config['config']['vin']}/engine/start", headers = header).json()
     time.sleep(int(config["config"]["timer"]))
     if vehicleStatus["status"] == 200 and getStatus()["vehiclestatus"]["remoteStartStatus"]["value"] == 1:
-        return "Engine Started"
+        if args.j:
+            return getStatus()["vehiclestatus"]["remoteStartStatus"]
+        elif not args.j:
+            return "Engine Started"
     else:
-        return f"Engine Start Command Failed:\n{vehicleStatus}" + str(getStatus()["vehiclestatus"]["remoteStartStatus"])
+        if args.j:
+            return getStatus()["vehiclestatus"]["remoteStartStatus"]
+        elif not args.j:
+            return f"Engine Start Command Failed:\n{vehicleStatus}" + str(getStatus()["vehiclestatus"]["remoteStartStatus"])
     
 def turnOffVehicle():
     vehicleStatus = requests.delete(f"https://usapi.cv.ford.com/api/vehicles/v2/{config['config']['vin']}/engine/start", headers = header).json()
     time.sleep(int(config["config"]["timer"]))
     if vehicleStatus["status"] == 200 and getStatus()["vehiclestatus"]["remoteStartStatus"]["value"] == 0:
-        return "Engine Stopped"
+        if args.j:
+            return getStatus()["vehiclestatus"]["remoteStartStatus"]
+        elif not args.j:
+            return "Engine Stopped"
     else:
-        return f"Engine Stop Command Failed:\n{vehicleStatus}" + str(getStatus()["vehiclestatus"]["remoteStartStatus"])
+        if args.j:
+            return getStatus()["vehiclestatus"]["remoteStartStatus"]
+        elif not args.j:
+            return f"Engine Stop Command Failed:\n{vehicleStatus}" + str(getStatus()["vehiclestatus"]["remoteStartStatus"])
 
 def rangeVehicle():
-    return "Range: {} miles".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["fuel"]["distanceToEmpty"]))
+    if args.j:
+        return f'{{\'distanceToEmpty\': {getStatus()["vehiclestatus"]["fuel"]["distanceToEmpty"]}}}'
+    else:
+        return "Range: {} miles".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["fuel"]["distanceToEmpty"]))
 
 def mileageVehicle():
-    return "Vehicle Mileage: {} mi".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["odometer"]["value"]))
+    if args.j:
+        return f'{{\'odometer\': {getStatus()["vehiclestatus"]["odometer"]["value"]}}}'
+    else:
+        return "Vehicle Mileage: {} mi".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["odometer"]["value"]))
 
 def oilLifeVehicle():
-    return "Oil Life: {}%".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["oil"]["oilLifeActual"]))
+    if args.j:
+        return f'{{\'oilLifeActual\': {getStatus()["vehiclestatus"]["oil"]["oilLifeActual"]}}}'
+    else:
+        return "Oil Life: {}%".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["oil"]["oilLifeActual"]))
 
 def coordinatesVehicle():
     r = requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["gps"]
-    return "{} {}".format(r["latitude"], r["longitude"])
+    if args.j:
+        return f'{{\'latitude\': {r["latitude"]}, \'longitude\': {r["longitude"]}}}'
+    else:
+        return "{} {}".format(r["latitude"], r["longitude"])
 
 def mapVehicle():
     r = requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["gps"]
-    return "https://www.google.com/maps/search/?api=1&query={},{}".format(r["latitude"], r["longitude"])
+    if args.j:
+        return f'{{\'map\': "https://www.google.com/maps/search/?api=1&query={r["latitude"]},{r["longitude"]}"}}'
+    else:
+        return "https://www.google.com/maps/search/?api=1&query={},{}".format(r["latitude"], r["longitude"])
 
 def tireStatusVehicle():
     r = requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["TPMS"]
-    return "Tire Status:\n  Front Left: {}\n  Front Right: {}\n  Rear Left: {}\n  Rear Right: {}".format(r["leftFrontTireStatus"]["value"], r["rightFrontTireStatus"]["value"], r["outerLeftRearTireStatus"]["value"], r["outerRightRearTireStatus"]["value"])
+    if args.j:
+        return f'{{"tireStatus": {{"frontLeft": "{r["leftFrontTireStatus"]["value"]}", "frontRight": "{r["rightFrontTireStatus"]["value"]}", "rearLeft": "{r["outerLeftRearTireStatus"]["value"]}", "rearRight": "{r["outerRightRearTireStatus"]["value"]}"}}}}'
+    else:
+        return "Tire Status:\n  Front Left: {}\n  Front Right: {}\n  Rear Left: {}\n  Rear Right: {}".format(r["leftFrontTireStatus"]["value"], r["rightFrontTireStatus"]["value"], r["outerLeftRearTireStatus"]["value"], r["outerRightRearTireStatus"]["value"])
 
 def doorStatusVehicle():
     r = requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["doorStatus"]
-    return "Door Status:\n  Hood: {}\n  Front Left: {}\n  Front Right: {}\n  Rear Left: {}\n  Rear Right: {}\n  Trunk: {}".format(r["hoodDoor"]["value"], r["driverDoor"]["value"], r["passengerDoor"]["value"], r["leftRearDoor"]["value"], r["rightRearDoor"]["value"], r["tailgateDoor"]["value"])   
+    if args.j:
+        return f'{{"doorStatus": {{"hood": "{r["hoodDoor"]["value"]}", "frontLeft": "{r["driverDoor"]["value"]}", "frontRight": "{r["passengerDoor"]["value"]}", "rearLeft": "{r["leftRearDoor"]["value"]}", "rearRight": "{r["rightRearDoor"]["value"]}", "trunk": "{r["tailgateDoor"]["value"]}"}}}}'
+    else:
+        return "Door Status:\n  Hood: {}\n  Front Left: {}\n  Front Right: {}\n  Rear Left: {}\n  Rear Right: {}\n  Trunk: {}".format(r["hoodDoor"]["value"], r["driverDoor"]["value"], r["passengerDoor"]["value"], r["leftRearDoor"]["value"], r["rightRearDoor"]["value"], r["tailgateDoor"]["value"])   
 
 def windowStatusVehicle():
     r = requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["windowPosition"]
-    return "Window Status:\n  Front Left: {}\n  Front Right: {}\n  Rear Left: {}\n  Rear Right: {}".format(r["driverWindowPosition"]["value"], r["passWindowPosition"]["value"], r["rearDriverWindowPos"]["value"], r["rearPassWindowPos"]["value"]).replace("_"," ")
+    if args.j:
+        return f'{{"windowStatus": {{"frontLeft": "{r["driverWindowPosition"]["value"].replace("_"," ")}", "frontRight": "{r["passWindowPosition"]["value"].replace("_"," ")}", "rearLeft": "{r["rearDriverWindowPos"]["value"].replace("_"," ")}", "rearRight": "{r["rearPassWindowPos"]["value"].replace("_"," ")}"}}}}'
+    else:
+        return "Window Status:\n  Front Left: {}\n  Front Right: {}\n  Rear Left: {}\n  Rear Right: {}".format(r["driverWindowPosition"]["value"], r["passWindowPosition"]["value"], r["rearDriverWindowPos"]["value"], r["rearPassWindowPos"]["value"]).replace("_"," ")
 
 main()
