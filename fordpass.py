@@ -81,7 +81,7 @@ header = {
 }
 
 def getStatus():
-    return json.dumps(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json())
+    return requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()
 
 def lockVehicle():
     vehicleStatus = requests.put(f"https://usapi.cv.ford.com/api/vehicles/v2/{config['config']['vin']}/doors/lock", headers = header).json()
@@ -141,33 +141,33 @@ def turnOffVehicle():
 
 def rangeVehicle():
     if args.j:
-        return f'{{\'distanceToEmpty\': {getStatus()["vehiclestatus"]["fuel"]["distanceToEmpty"]}}}'
+        return f'{{"distanceToEmpty": {getStatus()["vehiclestatus"]["fuel"]["distanceToEmpty"]}}}'
     else:
         return "Range: {} miles".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["fuel"]["distanceToEmpty"]))
 
 def mileageVehicle():
     if args.j:
-        return f'{{\'odometer\': {getStatus()["vehiclestatus"]["odometer"]["value"]}}}'
+        return f'{{"odometer": {getStatus()["vehiclestatus"]["odometer"]["value"]}}}'
     else:
         return "Vehicle Mileage: {} mi".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["odometer"]["value"]))
 
 def oilLifeVehicle():
     if args.j:
-        return f'{{\'oilLifeActual\': {getStatus()["vehiclestatus"]["oil"]["oilLifeActual"]}}}'
+        return f'{{"oilLifeActual": {getStatus()["vehiclestatus"]["oil"]["oilLifeActual"]}}}'
     else:
         return "Oil Life: {}%".format(int(requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["oil"]["oilLifeActual"]))
 
 def coordinatesVehicle():
     r = requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["gps"]
     if args.j:
-        return f'{{\'latitude\': {r["latitude"]}, \'longitude\': {r["longitude"]}}}'
+        return f'{{"latitude": {r["latitude"]}, "longitude": {r["longitude"]}}}'
     else:
-        return "{} {}".format(r["latitude"], r["longitude"])
+        return f'{r["latitude"]} {r["longitude"]}'
 
 def mapVehicle():
     r = requests.get(f"https://usapi.cv.ford.com/api/vehicles/v4/{config['config']['vin']}/status", headers = header).json()["vehiclestatus"]["gps"]
     if args.j:
-        return f'{{\'map\': "https://www.google.com/maps/search/?api=1&query={r["latitude"]},{r["longitude"]}"}}'
+        return f'{{"map": "https://www.google.com/maps/search/?api=1&query={r["latitude"]},{r["longitude"]}"}}'
     else:
         return "https://www.google.com/maps/search/?api=1&query={},{}".format(r["latitude"], r["longitude"])
 
