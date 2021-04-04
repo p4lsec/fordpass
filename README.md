@@ -9,7 +9,7 @@ The only dependencies are a Ford vehicle that suports FordPass, a valid FordPass
 
 First, you will need the username, password, and VIN for your Ford.  Store these values in fordpass.conf.  Remember to take proper security measures to protect this file. 
 
-Next, make sure you have the 'requests' library installed:
+Next, make sure you have the 'requests' library installed (unless using Docker):
 
 `pip3 install requests`
 
@@ -18,6 +18,18 @@ Now clone this repo:
 `git clone https://github.com/p4lsec/fordpass.git && cd fordpass`
 
 Next, paste your FordPass username, password, and vehicle's VIN in fordpass.conf. That's all there is to it!
+
+## Docker
+
+Running this ap in Docker is dead simple.  Assuming a [working Docker setup](https://docs.docker.com/engine/install/ubuntu/), run the following:
+
+`docker build -t fordpass .`
+
+When it comes time to run the app, instead of running `python3 fordpass.py`, just run:
+
+`docker run -it --rm fordpass -h`
+
+Replace -h with your command line arguments to use the application.  This method returns only the JSON response of your commands. 
 
 ## Usage
 
@@ -28,6 +40,7 @@ python3 fordpass.py [arguments]
 
 arguments:
   -h, --help  show this help message and exit
+  -j          Return only raw JSON
   -l          Lock your vehicle
   -u          Unlock your vehicle
   -s          Start your vehicle
@@ -42,7 +55,6 @@ arguments:
   -w          Returns your vehicle's window status
   -n          Returns vehicle's raw status
   ```
-
 
 When interacting with the vehicle (locking/unlocking, remote start, etc), there is a deliberate delay to give time for the vehicle to execute the commands and change status.  If you are seeing errors when interacting, you can modify the 'timer' value in fordpass.conf to a higher number.  Network latency, vehicle hibernation status, reception, and other factors can affect this time. 
 
